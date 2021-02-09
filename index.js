@@ -31,7 +31,12 @@ const app = new Koa()
 const router = new Router()
 
 router
-  .redirect('/', 'https://github.com/Equim-chan/tensoul')
+  .get('/', async (ctx) => {
+    ctx.body = 'Usage:\n'
+      + '  GET /convert?id={mahjong_soul_log_id}\n'
+      + '\n'
+      + 'Repo: https://github.com/Equim-chan/tensoul\n'
+  })
   .get('/convert', async (ctx) => {
     let id = ctx.query.id
     if (!id) {
