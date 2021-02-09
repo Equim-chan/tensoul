@@ -68,7 +68,7 @@ async function tenhouLogFromMjsoulID(id) {
     const id = process.argv[2]
     const result = await tenhouLogFromMjsoulID(id)
     console.log(JSON.stringify(result))
-    return
+    process.exit(0)
   }
   // Server
   const app = new Koa()
@@ -104,4 +104,4 @@ async function tenhouLogFromMjsoulID(id) {
 })().catch(err => {
   console.error(err.stack || err.message || err)
   process.exit(1)
-}).then(() => process.exit(0))
+})
