@@ -90,7 +90,7 @@ async function tenhouLogFromMjsoulID(id) {
       }
 
       try {
-        ctx.body = tenhouLogFromMjsoulID(id)
+        ctx.body = await tenhouLogFromMjsoulID(id)
       } catch (err) {
         ctx.status = 500
         ctx.body = { error: err.message || err.error || err }
