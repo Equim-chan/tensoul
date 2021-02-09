@@ -47,7 +47,7 @@ async function tenhouLogFromMjsoulID(id) {
   })
   const detailRecords = mjsoul.wrapper.decode(log.data)
 
-  const name = detailRecords.name.substr(4)
+  const name = detailRecords.name.substring(4)
   const data = detailRecords.data
   const resGameRecord = mjsoul.root.lookupType(name).decode(data)
 
@@ -68,7 +68,7 @@ async function tenhouLogFromMjsoulID(id) {
     const id = process.argv[2]
     const result = await tenhouLogFromMjsoulID(id)
     console.log(JSON.stringify(result))
-    process.exit(0)
+    return
   }
   // Server
   const app = new Koa()
@@ -104,4 +104,4 @@ async function tenhouLogFromMjsoulID(id) {
 })().catch(err => {
   console.error(err.stack || err.message || err)
   process.exit(1)
-})
+}).then(() => process.exit(0))
