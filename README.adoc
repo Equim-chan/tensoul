@@ -1,0 +1,24 @@
+= tensoul
+Equim <https://github.com/Equim-chan[@Equim-chan]>
+
+Convert MahjongSoul log into tenhou.net/6 format.
+
+== Usage
+=== `ACCESS_TOKEN`
+Login the account on any server of MahjongSoul. When the main title is loaded, check `GameMgr.Inst.access_token` in the devtools console.
+
+Set `ACCESS_TOKEN` and `ENDPOINT`. Check `config.js` for more info.
+
+=== Run as a CLI
+[source,shell]
+----
+$ node . MAHJONG_SOUL_LOG_ID > tenhou_log.json
+----
+
+=== Run as an HTTP Server
+[source,shell]
+----
+$ node .
+----
+
+The API is `GET /convert?id={mahjong_soul_log_id}`

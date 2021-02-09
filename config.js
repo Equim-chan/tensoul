@@ -4,15 +4,16 @@ const process = require('process')
 
 const config = {
   mjsoul: {
-    url: 'wss://mjusgs.mahjongsoul.com:9663',
-    // url: 'wss://mjjpgs.mahjongsoul.com:9663',
+    // US: wss://mjusgs.mahjongsoul.com:9663
+    // JP: wss://mjjpgs.mahjongsoul.com:9663
+    url: process.env.ENDPOINT || 'wss://mjjpgs.mahjongsoul.com:9663',
     timeout: 10000,
   },
   login: {
     type: 10,
     access_token: process.env.ACCESS_TOKEN,
   },
-  port: process.env.PORT,
+  port: process.env.PORT || 2563,
   addr: '0.0.0.0',
 }
 
