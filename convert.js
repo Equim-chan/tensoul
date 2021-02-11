@@ -251,7 +251,7 @@ kyoku.init = function(leaf)
     this.nplayers    = leaf.scores.length;
     this.round       = [4 * leaf.chang + leaf.ju, leaf.ben, leaf.liqibang];
     this.initscores  = leaf.scores; pad_right(this.initscores, 4, 0);
-    this.doras       = leaf.doras.map(e => tm2t(e));
+    this.doras       = leaf.dora ? [tm2t(leaf.dora)] : leaf.doras.map(e => tm2t(e));
     this.draws       = [[],[],[],[]];
     this.discards    = [[],[],[],[]];
     this.haipais     = this.draws.map( (_, i) => leaf["tiles" + i].map( f => tm2t(f)));
