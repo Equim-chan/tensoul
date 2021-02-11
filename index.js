@@ -5,6 +5,7 @@ const Koa = require('koa')
 const Router = require('@koa/router')
 const process = require('process')
 const EventEmitter = require('events')
+const requests = require('./requests.js')
 const { toTenhou } = require('./convert.js')
 const deobfuse = require('./deobfuse.js')
 const config = require('./config.js')
@@ -60,6 +61,11 @@ async function tenhouLogFromMjsoulID(id) {
   const log = await mjsoul.sendAsync('fetchGameRecord', {
     game_uuid: logID,
   })
+
+  if (log.data_url) {
+    log.data = await requests.get(log.data_url)
+  }
+
   const detailRecords = mjsoul.wrapper.decode(log.data)
 
   const name = detailRecords.name.substring(4)
