@@ -6,6 +6,7 @@ const Router = require('@koa/router')
 const process = require('process')
 const EventEmitter = require('events')
 const { toTenhou } = require('./convert.js')
+const deobfuse = require('./deobfuse.js')
 const config = require('./config.js')
 
 const port = config.port || 2563
@@ -36,14 +37,28 @@ async function login() {
 }
 
 async function tenhouLogFromMjsoulID(id) {
-  id = id.replace(/_.*$/, '')
+  const seps = id.split('_')
+  let logID = seps[0]
+  let targetID
+
+  if (seps.length >= 3 && seps[2] === '2') {
+    // "anonymized" log id
+    logID = deobfuse.decodeLogID(logID)
+  }
+  if (seps.length >= 2) {
+    if (seps[1].charAt(0) === 'a') {
+      targetID = deobfuse.decodeAccountID(parseInt(seps[1].substring(1)))
+    } else {
+      targetID = parseInt(seps[1])
+    }
+  }
 
   while (!is_logged_in) {
     await new Promise(resolve => condvar.once('logged_in', resolve))
   }
 
   const log = await mjsoul.sendAsync('fetchGameRecord', {
-    game_uuid: id,
+    game_uuid: logID,
   })
   const detailRecords = mjsoul.wrapper.decode(log.data)
 
@@ -56,7 +71,18 @@ async function tenhouLogFromMjsoulID(id) {
     return mjsoul.root.lookupType(raw.name).decode(raw.data)
   })
 
-  return toTenhou(log)
+  const tenhouLog = toTenhou(log)
+
+  if (targetID != null) {
+    for (let acc of log.head.accounts) {
+      if (acc.account_id === targetID) {
+        tenhouLog._target_actor = acc.seat
+        break
+      }
+    }
+  }
+
+  return tenhouLog
 }
 
 (async () => {
