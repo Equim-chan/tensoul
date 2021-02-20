@@ -63,15 +63,14 @@ async function tenhouLogFromMjsoulID(id) {
   })
 
   if (log.data_url) {
+    // data_url is for some very old logs
     log.data = await requests.get(log.data_url)
   }
 
   const detailRecords = mjsoul.wrapper.decode(log.data)
-
   const name = detailRecords.name.substring(4)
   const data = detailRecords.data
   const resGameRecord = mjsoul.root.lookupType(name).decode(data)
-
   log.data = resGameRecord.records.map(value => {
     const raw = mjsoul.wrapper.decode(value)
     return mjsoul.root.lookupType(raw.name).decode(raw.data)

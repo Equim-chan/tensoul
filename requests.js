@@ -8,9 +8,9 @@ exports.get = async (url) => {
     throw new Error(res.statusCode.toString() + ' ' + res.statusMessage)
   }
 
-  let body = Buffer.allocUnsafe(0)
+  let body = Buffer.from([])
   res.on('data', data => body = Buffer.concat([body, data]))
-
   await new Promise(resolve => res.on('end', resolve))
+
   return body
 }
