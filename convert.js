@@ -636,7 +636,7 @@ function parse(record)
     res["rate"]  = record.head.accounts.map(e => e.level.score); //level score, closest thing to rate
     pad_right(res["rate"],4, 0);
     res["sx"]    = record.head.accounts
-        .map(e => cfg.item_definition.character.map_[e.character.charid].sex)
+        .map(e => cfg.item_definition.character.map_[e.character.charid]?.sex || 1)
         .map(e => (e == 1 ? "F" : (e == 2 ? "M" : "C"))); //player's sex
     pad_right(res["sx"], 4, "C");
     //mjs results are sorted by placement (giving seats), tenhou sorts by seat
