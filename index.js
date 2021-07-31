@@ -65,17 +65,27 @@ async function tenhouLogFromMjsoulID(id) {
 
   if (log.data_url) {
     // data_url is for some very old logs
-    log.data = await superagent.get(log.data_url)
+    log.data = (await superagent.get(log.data_url).buffer(true)).body
   }
 
   const detailRecords = mjsoul.wrapper.decode(log.data)
   const name = detailRecords.name.substring(4)
   const data = detailRecords.data
-  const resGameRecord = mjsoul.root.lookupType(name).decode(data)
-  log.data = resGameRecord.records.map(value => {
-    const raw = mjsoul.wrapper.decode(value)
-    return mjsoul.root.lookupType(raw.name).decode(raw.data)
-  })
+  const payload = mjsoul.root.lookupType(name).decode(data)
+  if (payload.version < 210715 && payload.records.length > 0) {
+    log.data = payload.records.map(value => {
+      const raw = mjsoul.wrapper.decode(value)
+      return mjsoul.root.lookupType(raw.name).decode(raw.data)
+    })
+  } else {
+    // for version 210715 or later
+    log.data = payload.actions
+      .filter(action => action.result && action.result.length > 0)
+      .map(action => {
+        const raw = mjsoul.wrapper.decode(action.result)
+        return mjsoul.root.lookupType(raw.name).decode(raw.data)
+      })
+  }
 
   const tenhouLog = toTenhou(log)
 
