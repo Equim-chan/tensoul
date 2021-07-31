@@ -1,31 +1,31 @@
 'use strict'
 
+const pb = require("protobufjs")
 const MJSoul = require('mjsoul')
 const Koa = require('koa')
 const Router = require('@koa/router')
+const superagent = require('superagent')
 const process = require('process')
 const EventEmitter = require('events')
-const requests = require('./requests.js')
 const { toTenhou } = require('./convert.js')
 const deobfuse = require('./deobfuse.js')
+const serverConfig = require('./server_config.js')
 const config = require('./config.js')
 
 const port = config.port || 2563
 const addr = config.addr || '127.0.0.1'
-const mjsoulConf = config.mjsoul
-const loginConf = config.login
-const mjsoul = new MJSoul(mjsoulConf)
 
 const condvar = new EventEmitter()
 let is_logged_in = false
+
+let mjsoul
 
 async function login() {
   try {
     is_logged_in = false
     console.error('login triggered')
 
-    const res = await mjsoul.sendAsync('oauth2Login', loginConf)
-
+    const res = await mjsoul.sendAsync('oauth2Login', config.login)
     console.error('login done')
     is_logged_in = true
     condvar.emit('logged_in')
@@ -60,11 +60,12 @@ async function tenhouLogFromMjsoulID(id) {
 
   const log = await mjsoul.sendAsync('fetchGameRecord', {
     game_uuid: logID,
+    client_version_string: config.login.client_version_string,
   })
 
   if (log.data_url) {
     // data_url is for some very old logs
-    log.data = await requests.get(log.data_url)
+    log.data = await superagent.get(log.data_url)
   }
 
   const detailRecords = mjsoul.wrapper.decode(log.data)
@@ -91,6 +92,24 @@ async function tenhouLogFromMjsoulID(id) {
 }
 
 (async () => {
+  const scfg = await serverConfig.getServerConfig(config.mjsoul.base, config.mjsoul.timeout)
+  const root = pb.Root.fromJSON(scfg.liqi)
+  const wrapper = root.lookupType('Wrapper')
+
+  config.login.client_version = {
+    resource: scfg.version,
+  }
+  config.login.client_version_string = 'web-' + scfg.version.replace(/\.w$/, '')
+
+  const endpoint = await serverConfig.chooseFastestServer(scfg.serviceDiscoveryServers)
+  const url = (await serverConfig.getCtlEndpoints(endpoint)).shift()
+  mjsoul = new MJSoul({
+    url,
+    root,
+    wrapper,
+    timeout: config.mjsoul.timeout,
+  })
+
   mjsoul.on('NotifyAccountLogout', login)
   mjsoul.open(login)
 
