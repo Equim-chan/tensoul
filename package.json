@@ -14,5 +14,8 @@
     "koa": "^2.13.1",
     "mjsoul": "^2.2.0",
     "superagent": "^6.1.0"
+  },
+  "engines": {
+    "node": "16.x"
   }
 }
