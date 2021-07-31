@@ -7,7 +7,6 @@ const config = {
     // US: wss://mjusgs.mahjongsoul.com:9663
     // JP: wss://mjjpgs.mahjongsoul.com:9663
     base: process.env.MJS_BASE,
-    // url: process.env.ENDPOINT || 'wss://mjjpgs.mahjongsoul.com:9663',
     timeout: 10000,
   },
 
