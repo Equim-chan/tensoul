@@ -629,8 +629,8 @@ function parse(record)
     res["lobby"] = 0; //tenhou custom lobby - could be tourney id or friendly room for mjs. appending to title instead to avoid 3->C etc. in tenhou.net/5
     res["dan"]   = record.head.accounts.map(e =>
         (JPNAME == NAMEPREF) ?
-            cfg.level_definition.level_definition.map_[e.level.id].full_name_jp
-            : cfg.level_definition.level_definition.map_[e.level.id].full_name_en
+            cfg.level_definition.level_definition.map_[e.level.id]?.full_name_jp
+            : cfg.level_definition.level_definition.map_[e.level.id]?.full_name_en
     );
     pad_right(res["dan"], 4, "");
     res["rate"]  = record.head.accounts.map(e => e.level.score); //level score, closest thing to rate

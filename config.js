@@ -4,8 +4,8 @@ const process = require('process')
 
 const config = {
   mjsoul: {
-    // US: wss://mjusgs.mahjongsoul.com:9663
-    // JP: wss://mjjpgs.mahjongsoul.com:9663
+    // US: https://mahjongsoul.game.yo-star.com
+    // JP: https://game.mahjongsoul.com
     base: process.env.MJS_BASE,
     timeout: 10000,
   },
