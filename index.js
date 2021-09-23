@@ -5,6 +5,8 @@ const MJSoul = require('mjsoul')
 const Koa = require('koa')
 const Router = require('@koa/router')
 const superagent = require('superagent')
+require('superagent-proxy')(superagent)
+const ProxyAgent = require('proxy-agent')
 const process = require('process')
 const EventEmitter = require('events')
 const { toTenhou } = require('./convert.js')
@@ -65,7 +67,7 @@ async function tenhouLogFromMjsoulID(id) {
 
   if (log.data_url) {
     // data_url is for some very old logs
-    log.data = (await superagent.get(log.data_url).buffer(true)).body
+    log.data = (await superagent.get(log.data_url).proxy(process.env.https_proxy).buffer(true)).body
   }
 
   const detailRecords = mjsoul.wrapper.decode(log.data)
@@ -118,6 +120,10 @@ async function tenhouLogFromMjsoulID(id) {
     root,
     wrapper,
     timeout: config.mjsoul.timeout,
+    wsOption: {
+      agent: new ProxyAgent(process.env.https_proxy),
+      origin: config.mjsoul.base,
+    },
   })
 
   mjsoul.on('NotifyAccountLogout', login)
