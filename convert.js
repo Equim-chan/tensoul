@@ -1,10 +1,10 @@
-// Taken and edited from https://github.com/TanakaKotoha/MajsoulPlusMods/blob/2915981ea5e4e18ff63f21b140f6f9833edd25e1/extension/downloadlogs/script.js
+// Taken and edited from https://repo.riichi.moe/library.html#resources-majplus
 
 'use strict'
 
 const cfg = require('./data.json')
 
-const NAMEPREF   = 0;     //2 for english, 1 for sane amount of weeb, 0 for japanese
+const NAMEPREF   = 2;     //2 for english, 1 for sane amount of weeb, 0 for japanese
 //variables you might actually want to change
 const VERBOSELOG = false; //dump mjs records to output - will make the file too large for tenhou.net/5 viewer
 const SHOWFU     = false; //always show fu/han for scoring - even for limit hands
@@ -648,7 +648,7 @@ function parse(record)
     pad_right(res["name"], 4, "");
     //optional title - why not give the room and put the timestamp here; 1000 for unix to .js timestamp convention
     res["title"] = [ ruledisp + lobby,
-    (new Date(record.head.end_time * 1000)).toLocaleString()
+    (new Date(record.head.end_time * 1000)).toUTCString()
     ];
     //optionally dump mjs records NOTE: this will likely make the file too large for tenhou.net/5 viewer
     if (VERBOSELOG)

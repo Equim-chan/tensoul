@@ -3,17 +3,20 @@
 const process = require('process')
 
 const config = {
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.60 Safari/537.36',
+
   mjsoul: {
     // US: https://mahjongsoul.game.yo-star.com
     // JP: https://game.mahjongsoul.com
     base: process.env.MJS_BASE,
+    // can be null
+    gateway: process.env.MJS_GATEWAY,
     timeout: 10000,
   },
 
   login: {
     type: 10,
     access_token: process.env.ACCESS_TOKEN,
-    deviceID: '1c10e503-6719-4434-9792-55ecc9ca76ec',
     device: {
       hardware: 'pc',
       is_browser: true,
@@ -23,7 +26,8 @@ const config = {
       sale_platform: 'web',
       software: 'Chrome',
     },
-    random_key: 'cad225d2-eb0d-4e6b-b424-9a39677a87af',
+    random_key: '1a5675c3-fcaf-495e-a147-320050388cd0',
+    reconnect: false,
   },
 
   port: process.env.PORT || 2563,

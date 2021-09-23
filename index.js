@@ -14,125 +14,141 @@ const deobfuse = require('./deobfuse.js')
 const serverConfig = require('./server_config.js')
 const config = require('./config.js')
 
-const port = config.port || 2563
-const addr = config.addr || '127.0.0.1'
+class Client {
+  constructor() {}
 
-const condvar = new EventEmitter()
-let is_logged_in = false
+  async init() {
+    this._condvar = new EventEmitter()
+    this._is_logged_in = false
 
-let mjsoul
+    const scfg = await serverConfig.getServerConfig(config.mjsoul.base, config.mjsoul.timeout)
+    this._serverVersion = scfg.version
+    this._clientVersionString = 'web-' + this._serverVersion.replace(/\.w$/, '')
 
-async function login() {
-  try {
-    is_logged_in = false
-    console.error('login triggered')
+    const root = pb.Root.fromJSON(scfg.liqi)
+    const wrapper = root.lookupType('Wrapper')
 
-    const res = await mjsoul.sendAsync('oauth2Login', config.login)
-    console.error('login done')
-    is_logged_in = true
-    condvar.emit('logged_in')
+    let gateway = config.mjsoul.gateway
+    if (gateway == null) {
+      const endpoint = await serverConfig.chooseFastestServer(scfg.serviceDiscoveryServers)
+      gateway = (await serverConfig.getCtlEndpoints(endpoint)).shift()
+    }
+    console.error(`using ${gateway}`)
 
-    return res
-  } catch (err) {
-    console.error(err.stack || err)
-    process.exit(1)
+    this._mjsoul = new MJSoul({
+      url: gateway,
+      timeout: config.mjsoul.timeout,
+      root,
+      wrapper,
+      wsOption: {
+        agent: new ProxyAgent(process.env.https_proxy),
+        origin: config.mjsoul.base,
+        headers: {
+          'User-Agent': config.userAgent,
+        }
+      },
+    })
+
+    this._mjsoul.on('NotifyAccountLogout', () => this.login())
+    this._mjsoul.open(() => this.login())
   }
-}
 
-async function tenhouLogFromMjsoulID(id) {
-  const seps = id.split('_')
-  let logID = seps[0]
-  let targetID
+  async login() {
+    try {
+      this._is_logged_in = false
+      console.error('login triggered')
 
-  if (seps.length >= 3 && seps[2] === '2') {
-    // "anonymized" log id
-    logID = deobfuse.decodeLogID(logID)
-  }
-  if (seps.length >= 2) {
-    if (seps[1].charAt(0) === 'a') {
-      targetID = deobfuse.decodeAccountID(parseInt(seps[1].substring(1)))
-    } else {
-      targetID = parseInt(seps[1])
+      await this._mjsoul.sendAsync('heatbeat')
+
+      const login = {
+        client_version_string: this._clientVersionString,
+        ...config.login
+      }
+      const res = await this._mjsoul.sendAsync('oauth2Login', login)
+      console.error('login done')
+      this._is_logged_in = true
+      this._condvar.emit('logged_in')
+
+      return res
+    } catch (err) {
+      console.error(err.stack || err)
+      process.exit(1)
     }
   }
 
-  while (!is_logged_in) {
-    await new Promise(resolve => condvar.once('logged_in', resolve))
-  }
+  async tenhouLogFromMjsoulID(id) {
+    const seps = id.split('_')
+    let logID = seps[0]
+    let targetID
 
-  const log = await mjsoul.sendAsync('fetchGameRecord', {
-    game_uuid: logID,
-    client_version_string: config.login.client_version_string,
-  })
-
-  if (log.data_url) {
-    // data_url is for some very old logs
-    log.data = (await superagent.get(log.data_url).proxy(process.env.https_proxy).buffer(true)).body
-  }
-
-  const detailRecords = mjsoul.wrapper.decode(log.data)
-  const name = detailRecords.name.substring(4)
-  const data = detailRecords.data
-  const payload = mjsoul.root.lookupType(name).decode(data)
-  if (payload.version < 210715 && payload.records.length > 0) {
-    log.data = payload.records.map(value => {
-      const raw = mjsoul.wrapper.decode(value)
-      return mjsoul.root.lookupType(raw.name).decode(raw.data)
-    })
-  } else {
-    // for version 210715 or later
-    log.data = payload.actions
-      .filter(action => action.result && action.result.length > 0)
-      .map(action => {
-        const raw = mjsoul.wrapper.decode(action.result)
-        return mjsoul.root.lookupType(raw.name).decode(raw.data)
-      })
-  }
-
-  const tenhouLog = toTenhou(log)
-
-  if (targetID != null) {
-    for (let acc of log.head.accounts) {
-      if (acc.account_id === targetID) {
-        tenhouLog._target_actor = acc.seat
-        break
+    if (seps.length >= 3 && seps[2] === '2') {
+      // "anonymized" log id
+      logID = deobfuse.decodeLogID(logID)
+    }
+    if (seps.length >= 2) {
+      if (seps[1].charAt(0) === 'a') {
+        targetID = deobfuse.decodeAccountID(parseInt(seps[1].substring(1)))
+      } else {
+        targetID = parseInt(seps[1])
       }
     }
-  }
 
-  return tenhouLog
+    while (!this._is_logged_in) {
+      await new Promise(resolve => this._condvar.once('logged_in', resolve))
+    }
+
+    const log = await this._mjsoul.sendAsync('fetchGameRecord', {
+      game_uuid: logID,
+      client_version_string: this._clientVersionString,
+    })
+
+    if (log.data_url) {
+      // data_url is for some very old logs
+      log.data = (await superagent.get(log.data_url).proxy(process.env.https_proxy).buffer(true)).body
+    }
+
+    const detailRecords = this._mjsoul.wrapper.decode(log.data)
+    const name = detailRecords.name.substring(4)
+    const data = detailRecords.data
+    const payload = this._mjsoul.root.lookupType(name).decode(data)
+    if (payload.version < 210715 && payload.records.length > 0) {
+      log.data = payload.records.map(value => {
+        const raw = this._mjsoul.wrapper.decode(value)
+        return this._mjsoul.root.lookupType(raw.name).decode(raw.data)
+      })
+    } else {
+      // for version 210715 or later
+      log.data = payload.actions
+        .filter(action => action.result && action.result.length > 0)
+        .map(action => {
+          const raw = this._mjsoul.wrapper.decode(action.result)
+          return this._mjsoul.root.lookupType(raw.name).decode(raw.data)
+        })
+    }
+
+    const tenhouLog = toTenhou(log)
+
+    if (targetID != null) {
+      for (let acc of log.head.accounts) {
+        if (acc.account_id === targetID) {
+          tenhouLog._target_actor = acc.seat
+          break
+        }
+      }
+    }
+
+    return tenhouLog
+  }
 }
 
 (async () => {
-  const scfg = await serverConfig.getServerConfig(config.mjsoul.base, config.mjsoul.timeout)
-  const root = pb.Root.fromJSON(scfg.liqi)
-  const wrapper = root.lookupType('Wrapper')
-
-  config.login.client_version = {
-    resource: scfg.version,
-  }
-  config.login.client_version_string = 'web-' + scfg.version.replace(/\.w$/, '')
-
-  const endpoint = await serverConfig.chooseFastestServer(scfg.serviceDiscoveryServers)
-  const url = (await serverConfig.getCtlEndpoints(endpoint)).shift()
-  mjsoul = new MJSoul({
-    url,
-    root,
-    wrapper,
-    timeout: config.mjsoul.timeout,
-    wsOption: {
-      agent: new ProxyAgent(process.env.https_proxy),
-      origin: config.mjsoul.base,
-    },
-  })
-
-  mjsoul.on('NotifyAccountLogout', login)
-  mjsoul.open(login)
+  const client = new Client()
+  await client.init()
 
   if (process.argv.length > 2) {
     // CLI
     const id = process.argv[2]
-    const result = await tenhouLogFromMjsoulID(id)
+    const result = await client.tenhouLogFromMjsoulID(id)
     console.log(JSON.stringify(result))
     process.exit(0)
   }
@@ -156,7 +172,7 @@ async function tenhouLogFromMjsoulID(id) {
       }
 
       try {
-        ctx.body = await tenhouLogFromMjsoulID(id)
+        ctx.body = await client.tenhouLogFromMjsoulID(id)
       } catch (err) {
         ctx.status = 500
         ctx.body = { error: err.message || err.error || err }
@@ -164,7 +180,7 @@ async function tenhouLogFromMjsoulID(id) {
     })
 
   app.use(router.routes())
-  app.listen(port, addr)
+  app.listen(config.port, config.addr)
 
   console.error('Serving on http://' + addr + ':' + port)
 })().catch(err => {
