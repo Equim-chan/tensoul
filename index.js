@@ -187,7 +187,7 @@ class Client {
   app.use(router.routes())
   app.listen(config.port, config.addr)
 
-  console.error('Serving on http://' + addr + ':' + port)
+  console.error(`Serving on http://${config.addr}:${config.port}`)
 })().catch(err => {
   console.error(err.stack || err.message || err)
   process.exit(1)
