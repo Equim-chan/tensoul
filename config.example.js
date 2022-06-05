@@ -30,6 +30,12 @@ const config = {
     reconnect: false,
   },
 
+  // optional
+  // apiAuth: {
+  //   name: 'equim',
+  //   pass: 'password',
+  // },
+
   port: process.env.PORT || 2563,
   addr: '0.0.0.0',
 }

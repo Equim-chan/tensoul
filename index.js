@@ -4,6 +4,7 @@ const pb = require("protobufjs")
 const MJSoul = require('mjsoul')
 const Koa = require('koa')
 const Router = require('@koa/router')
+const auth = require('koa-basic-auth');
 const superagent = require('superagent')
 require('superagent-proxy')(superagent)
 const ProxyAgent = require('proxy-agent')
@@ -155,6 +156,10 @@ class Client {
   // Server
   const app = new Koa()
   const router = new Router()
+
+  if (config.apiAuth != null) {
+    app.use(auth(config.apiAuth))
+  }
 
   router
     .get('/', async (ctx) => {
