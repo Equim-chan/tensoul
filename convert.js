@@ -263,6 +263,7 @@ kyoku.init = function(leaf)
     this.dealerseat  = leaf.ju;
     this.ldseat      = -1; //who dealt the last tile
     this.nriichi     = 0; //number of current riichis - needed for scores, abort workaround
+    this.priichi     = false; // has pending riichi
     this.nkan        = 0; //number of current kans - only for abort workaround
     //pao rule
     this.nowinds     = new Array(4).fill(0);//counter for each players open wind pons/kans
@@ -342,7 +343,7 @@ function generatelog(mjslog)
 
                 if (e.is_liqi) //riichi delcaration
                 {
-                    kyoku.nriichi++;
+                    kyoku.priichi = true;
                     symbol = "r" + symbol;
                 }
                 kyoku.discards[e.seat].push(symbol);
@@ -356,6 +357,11 @@ function generatelog(mjslog)
             }
             case "RecordDealTile":
             {   //draw - after kan this gets passed the new dora
+                if (kyoku.priichi) {
+                    kyoku.priichi = false;
+                    kyoku.nriichi++;
+                }
+
                 if (e.doras && e.doras.length > kyoku.doras.length)
                     kyoku.doras = e.doras.map(f => tm2t(f));
 
@@ -365,6 +371,11 @@ function generatelog(mjslog)
             }
             case "RecordChiPengGang":
             {   //call - chi, pon, daiminkan
+                if (kyoku.priichi) {
+                    kyoku.priichi = false;
+                    kyoku.nriichi++;
+                }
+
                 switch (e.type)
                 {
                     case 0:
@@ -502,6 +513,11 @@ function generatelog(mjslog)
             //////////////////////////////////////////////////////
             case "RecordLiuJu" :
             {   //abortion
+                if (kyoku.priichi) {
+                    kyoku.priichi = false;
+                    kyoku.nriichi++;
+                }
+
                 var entry = kyoku.dump([]);
 
                 if (1 == e.type)
