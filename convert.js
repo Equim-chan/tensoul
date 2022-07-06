@@ -120,6 +120,10 @@ function parsehule(h, kyoku)
     var liableseat  = -1;
     var liablefor   = 0;
 
+    h.fans = h.fans.sort(function (l, r) {
+        return cfg.fan.fan.map_[l.id].show_index - cfg.fan.fan.map_[r.id].show_index;
+    });
+
     if (h.yiman)
     {   //only worth checking yakuman hands
         h.fans.forEach(e =>
