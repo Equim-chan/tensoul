@@ -4,8 +4,8 @@
 
 const cfg = require('./data.json')
 
-const NAMEPREF   = 2;     //2 for english, 1 for sane amount of weeb, 0 for japanese
 //variables you might actually want to change
+const NAMEPREF   = 0;     //2 for english, 1 for sane amount of weeb, 0 for japanese
 const VERBOSELOG = false; //dump mjs records to output - will make the file too large for tenhou.net/5 viewer
 const SHOWFU     = false; //always show fu/han for scoring - even for limit hands
 
@@ -54,8 +54,8 @@ const DAISUUSHI = 50;
 const TSUMOGIRI = 60; //tenhou tsumogiri symbol
 
 //global variables - don't touch
-var ALLOW_KIRIAGE = false; //potentially allow this to be true
-var TSUMOLOSSOFF  = false; //sanma tsumo loss, is set true for sanma when tsumo loss off
+let ALLOW_KIRIAGE = false; //potentially allow this to be true
+let TSUMOLOSSOFF  = false; //sanma tsumo loss, is set true for sanma when tsumo loss off
 
 //listen for key press, modified from anonymizer mod
 function checkscene(scene)
@@ -76,7 +76,7 @@ function tm2t(str)
     //   31-39    - 1-9 sou
     //   41-47    - ESWN WGR
     //   51,52,53 - aka 5 man, pin, sou
-    var num = parseInt(str[0]);
+    let num = parseInt(str[0]);
     const tcon = { m : 1, p : 2, s : 3, z : 4 };
 
     return num ? 10 * tcon[str[1]] + num : 50 + tcon[str[1]];
@@ -109,20 +109,16 @@ function tlround(x)
 function parsehule(h, kyoku)
 {   //tenhou log viewer requires 点, 飜) or 役満) to end strings, rest of scoring string is entirely optional
     //who won, points from (self if tsumo), who won or if pao: who's responsible
-    var res    = [h.seat, h.zimo ? h.seat : kyoku.ldseat, h.seat];
-    var delta  = []; //we need to compute the delta ourselves to handle double/triple ron
-    var points = 0;
-    var rp     = (-1 != kyoku.nriichi) ? 1000 * (kyoku.nriichi + kyoku.round[2]) : 0; //riichi stick points, -1 means already taken
-    var hb     = 100 * kyoku.round[1]; //base honba payment
+    let res    = [h.seat, h.zimo ? h.seat : kyoku.ldseat, h.seat];
+    let delta  = []; //we need to compute the delta ourselves to handle double/triple ron
+    let points = 0;
+    let rp     = (-1 != kyoku.nriichi) ? 1000 * (kyoku.nriichi + kyoku.round[2]) : 0; //riichi stick points, -1 means already taken
+    let hb     = 100 * kyoku.round[1]; //base honba payment
 
     //sekinin barai logic
-    var pao         = false;
-    var liableseat  = -1;
-    var liablefor   = 0;
-
-    h.fans = h.fans.sort(function (l, r) {
-        return cfg.fan.fan.map_[l.id].show_index - cfg.fan.fan.map_[r.id].show_index;
-    });
+    let pao         = false;
+    let liableseat  = -1;
+    let liablefor   = 0;
 
     if (h.yiman)
     {   //only worth checking yakuman hands
@@ -222,7 +218,7 @@ function parsehule(h, kyoku)
     points += RUNES.points[JPNAME] + ((h.zimo && h.qinjia) ? RUNES.all[NAMEPREF]: "");
 
     //score string
-    var fuhan = h.fu + RUNES.fu[NAMEPREF] + h.count + RUNES.han[NAMEPREF];
+    let fuhan = h.fu + RUNES.fu[NAMEPREF] + h.count + RUNES.han[NAMEPREF];
     if (h.yiman) //yakuman
         res.push((SHOWFU ? fuhan : "") + RUNES.yakuman[NAMEPREF] + points);
     else if (13 <= h.count) //kazoe
@@ -249,7 +245,7 @@ function parsehule(h, kyoku)
 }
 
 //round information, to be reset every RecordNewRound
-var kyoku = [];
+let kyoku = [];
 kyoku.init = function(leaf)
 {                      //[kyoku, honba, riichi sticks] - NOTE: 4 mult. works for sanma
     this.nplayers    = leaf.scores.length;
@@ -267,7 +263,7 @@ kyoku.init = function(leaf)
     this.dealerseat  = leaf.ju;
     this.ldseat      = -1; //who dealt the last tile
     this.nriichi     = 0; //number of current riichis - needed for scores, abort workaround
-    this.priichi     = false; // has pending riichi
+    this.priichi     = false;
     this.nkan        = 0; //number of current kans - only for abort workaround
     //pao rule
     this.nowinds     = new Array(4).fill(0);//counter for each players open wind pons/kans
@@ -281,7 +277,7 @@ kyoku.init = function(leaf)
 //dump round informaion
 kyoku.dump = function(uras)
 {   //NOTE: doras,uras are the indicators
-    var entry = [];
+    let entry = [];
     entry.push(kyoku.round);
     entry.push(kyoku.initscores);
     entry.push(kyoku.doras);
@@ -326,7 +322,7 @@ function relativeseating(seat0, seat1)
 //convert mjs records to tenhou log
 function generatelog(mjslog)
 {
-    var log = [];
+    let log = [];
     mjslog.forEach((e, leafidx) =>
     {
         switch (e.constructor.name)
@@ -338,7 +334,7 @@ function generatelog(mjslog)
             }
             case "RecordDiscardTile":
             {   //discard - marking tsumogiri and riichi
-                var symbol = e.moqie ? TSUMOGIRI : tm2t(e.tile);
+                let symbol = e.moqie ? TSUMOGIRI : tm2t(e.tile);
 
                 //we pretend that the dealer's initial 14th tile is drawn - so we need to manually check the first discard
                 if (e.seat == kyoku.dealerseat
@@ -395,8 +391,8 @@ function generatelog(mjslog)
                     }
                     case 1:
                     {   //pon
-                        var worktiles = e.tiles.map(f => tm2t(f));
-                        var idx = relativeseating(e.seat, kyoku.ldseat);
+                        let worktiles = e.tiles.map(f => tm2t(f));
+                        let idx = relativeseating(e.seat, kyoku.ldseat);
                         kyoku.countpao(worktiles[0], e.seat, kyoku.ldseat);
                         //pop the called tile a preprend 'p'
                         worktiles.splice(idx, 0, "p" + worktiles.pop());
@@ -422,9 +418,9 @@ function generatelog(mjslog)
                         //     (writes to discards)
                         ///////////////////////////////////////////////////
                         //daiminkan
-                        var calltiles = e.tiles.map(f => tm2t(f));
+                        let calltiles = e.tiles.map(f => tm2t(f));
                         // < kamicha 0 | toimen 1 | shimocha 3 >
-                        var idx = relativeseating(e.seat, kyoku.ldseat);
+                        let idx = relativeseating(e.seat, kyoku.ldseat);
 
                         kyoku.countpao(calltiles[0], e.seat, kyoku.ldseat);
                         calltiles.splice( 2 == idx ? 3 : idx, 0, "m" + calltiles.pop());
@@ -448,8 +444,8 @@ function generatelog(mjslog)
             case "RecordAnGangAddGang" :
             {   //kan - shouminkan 'k', ankan 'a'
                 //NOTE: e.tiles here is a single tile; naki is placed in discards
-                var til =  tm2t(e.tiles);
-
+                let til =  tm2t(e.tiles);
+                kyoku.ldseat = e.seat; // for chankan, no conflict as last discard has passed
                 switch (e.type)
                 {
                     case 3:
@@ -462,7 +458,7 @@ function generatelog(mjslog)
                         //get the tiles from haipai and draws that
                         //are involved in ankan, dumb
                         //because n aka might be involved
-                        var ankantiles = kyoku.haipais[e.seat].filter(t => (deaka(t) == deaka(til) ? true : false))
+                        let ankantiles = kyoku.haipais[e.seat].filter(t => (deaka(t) == deaka(til) ? true : false))
                             .concat(kyoku.draws[e.seat].filter(t => (deaka(t) == deaka(til) ? true : false)) );
                         til = ankantiles.pop(); //doesn't really matter which tile we mark ankan with - chosing last drawn
                         kyoku.discards[e.seat].push(ankantiles.join("") + "a" + til); //push naki
@@ -473,18 +469,14 @@ function generatelog(mjslog)
                     case 2:
                     {   //shouminkan
                         //get pon naki from .draws and swap in new symbol
-                        var nakis = kyoku.draws[e.seat].filter(w =>
+                        let nakis = kyoku.draws[e.seat].filter(w =>
                         {
                             if ('string' === typeof w) //naki
                                 return w.includes("p" + deaka(til)) || w.includes("p" + makeaka(til)); //pon involves same tile type
                             else
                                 return false;
                         });
-                        if (!nakis.length)
-                        {
-                            console.log("could not find previous pon naki for shouminkan with " + e.tiles);
-                            return;
-                        }
+
                         kyoku.discards[e.seat].push(nakis[0].replace(/p/, "k" + til)); //push naki
                         kyoku.nkan++;
 
@@ -498,10 +490,12 @@ function generatelog(mjslog)
                         return;
                     }
                 }
+
+                return;
             }
             case "RecordBaBei" :
             {   //kita - this record (only) gives {seat, moqie}
-                //NOTE: tenhou doesn't mark it's kita based on when they were drawn, so we won't
+                //NOTE: tenhou doesn't mark its kita based on when they were drawn, so we won't
                 //if (e.moqie)
                 //    kyoku.discards[e.seat].push("f" + TSUMOGIRI);
                 //else
@@ -541,8 +535,8 @@ function generatelog(mjslog)
             }
             case "RecordNoTile" :
             {   //ryuukyoku
-                var entry = kyoku.dump([]);
-                var delta = new Array(4).fill(0.);
+                let entry = kyoku.dump([]);
+                let delta = new Array(4).fill(0.);
 
                 //NOTE: mjs wll not give delta_scores if everyone is (no)ten - TODO: minimize the autism
                 if (e.scores && e.scores[0] && e.scores[0].delta_scores && e.scores[0].delta_scores.length)
@@ -558,15 +552,15 @@ function generatelog(mjslog)
             }
             case "RecordHule":
             {   //agari
-                var agari = [];
-                var ura = [];
+                let agari = [];
+                let ura = [];
                 e.hules.forEach( f =>
                 {
                     if (ura.length < (f.li_doras ? f.li_doras.length : 0)) //take the longest ura list - double ron with riichi + dama
                         ura = f.li_doras.map(g => tm2t(g));
                     agari.push(parsehule(f, kyoku));
                 });
-                var entry = kyoku.dump(ura);
+                let entry = kyoku.dump(ura);
 
                 entry.push( [RUNES.agari[JPNAME]].concat(agari.flat()) ); //needs the japanese agari
                 log.push(entry);
@@ -588,14 +582,12 @@ function generatelog(mjslog)
 //this is the json struct that we write to file
 function parse(record)
 {
-    var res        = {};
-    var ruledisp   = "";
-    var lobby      = ""; //usually 0, is the custom lobby number
-    var nplayers   = record.head.result.players.length;
-    var nakas      = nplayers - 1; //default
-    var mjslog     = record.data;
-    // var mjslog     = net.MessageWrapper.decodeMessage(record.data)  //move-by-move details
-    //     .records.map(e => net.MessageWrapper.decodeMessage(e));
+    let res        = {};
+    let ruledisp   = "";
+    let lobby      = ""; //usually 0, is the custom lobby number
+    let nplayers   = record.head.result.players.length;
+    let nakas      = nplayers - 1; //default
+    let mjslog     = record.data;
 
     res["ver"]     = "2.3"; // mlog version number
     res["ref"]     = record.head.uuid; // game id - copy and paste into "other" on the log page to view
@@ -605,13 +597,12 @@ function parse(record)
 
     //rule display
     if (3 == nplayers && JPNAME == NAMEPREF)
-        // ruledisp += RUNES.sanma[JPNAME];
-        ruledisp += '3'
+        ruledisp += RUNES.sanma[JPNAME];
     if (record.head.config.meta.mode_id) //ranked or casual
         ruledisp += (JPNAME == NAMEPREF) ?
             cfg.desktop.matchmode.map_[record.head.config.meta.mode_id].room_name_jp
             : cfg.desktop.matchmode.map_[record.head.config.meta.mode_id].room_name_en;
-        else if (record.head.config.meta.room_id) //friendly
+    else if (record.head.config.meta.room_id) //friendly
     {
         lobby    = ": " + record.head.config.meta.room_id; //can set room number as lobby number
         ruledisp += RUNES.friendly[NAMEPREF]; //"Friendly";
@@ -647,25 +638,33 @@ function parse(record)
     }
 
     res["lobby"] = 0; //tenhou custom lobby - could be tourney id or friendly room for mjs. appending to title instead to avoid 3->C etc. in tenhou.net/5
-    res["dan"]   = record.head.accounts.map(e =>
-        (JPNAME == NAMEPREF) ?
-            cfg.level_definition.level_definition.map_[e.level.id]?.full_name_jp || '-'
-            : cfg.level_definition.level_definition.map_[e.level.id]?.full_name_en || '-'
+    // autism to fix logs with AI
+    // ranks
+    res["dan"]  = new Array(4).fill('');
+    record.head.accounts.forEach(e =>
+        res["dan"][e.seat] = (JPNAME == NAMEPREF) ?
+            cfg.level_definition.level_definition.map_[e.level.id].full_name_jp
+            : cfg.level_definition.level_definition.map_[e.level.id].full_name_en
     );
-    pad_right(res["dan"], 4, "");
-    res["rate"]  = record.head.accounts.map(e => e.level.score); //level score, closest thing to rate
-    pad_right(res["rate"],4, 0);
-    res["sx"]    = record.head.accounts
-        .map(e => cfg.item_definition.character.map_[e.character.charid]?.sex || 1)
-        .map(e => (e == 1 ? "F" : (e == 2 ? "M" : "C"))); //player's sex
-    pad_right(res["sx"], 4, "C");
-    //mjs results are sorted by placement (giving seats), tenhou sorts by seat
-    var scores   = record.head.result.players
+    // level score, no real analog to rate
+    res["rate"] = new Array(4).fill('');
+    record.head.accounts.forEach(e => res["rate"][e.seat] = e.level.score); //level score, closest thing to rate
+    // sex
+    res["sx"]  = new Array(4).fill('C')
+    // >names
+    res["name"] = new Array(4).fill('AI');
+    record.head.accounts.forEach(e => res["name"][e.seat] = e.nickname);
+    // clean up for sanma AI
+    if (3 == nplayers)
+    {
+        res["name"][3] = "";
+        res["sx"][3]   = "";
+    }
+    // scores
+    let scores   = record.head.result.players
         .map(e => [e.seat, e.part_point_1, e.total_point / 1000]);
     res["sc"]    = new Array(8).fill(0);
     scores.forEach((e, i) => {res["sc"][2 * e[0]] = e[1]; res["sc"][2 * e[0] + 1] = e[2];});
-    res["name"]  = record.head.accounts.map(e => e.nickname);
-    pad_right(res["name"], 4, "");
     //optional title - why not give the room and put the timestamp here; 1000 for unix to .js timestamp convention
     res["title"] = [ ruledisp + lobby,
     (new Date(record.head.end_time * 1000)).toUTCString()

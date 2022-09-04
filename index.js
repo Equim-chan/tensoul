@@ -4,16 +4,18 @@ const pb = require("protobufjs")
 const MJSoul = require('mjsoul')
 const Koa = require('koa')
 const Router = require('@koa/router')
-const auth = require('koa-basic-auth');
+const auth = require('koa-basic-auth')
 const superagent = require('superagent')
 require('superagent-proxy')(superagent)
 const ProxyAgent = require('proxy-agent')
-const process = require('process')
-const EventEmitter = require('events')
+
 const { toTenhou } = require('./convert.js')
 const deobfuse = require('./deobfuse.js')
 const serverConfig = require('./server_config.js')
 const config = require('./config.js')
+
+const process = require('process')
+const EventEmitter = require('events')
 
 class Client {
   constructor() {}
