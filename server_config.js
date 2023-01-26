@@ -10,6 +10,7 @@ const userAgent = config.userAgent
 async function getServerConfig(base) {
   const getVersion = await superagent
     .get(base + '/version.json')
+    .query({randv: Math.floor((1 + Math.random()) * Date.now())})
     .set('User-Agent', userAgent)
     // .proxy(process.env.https_proxy)
   const { version } = getVersion.body

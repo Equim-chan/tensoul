@@ -25,6 +25,8 @@ class Client {
     this._is_logged_in = false
 
     const scfg = await serverConfig.getServerConfig(config.mjsoul.base, config.mjsoul.timeout)
+    console.error(scfg)
+
     this._serverVersion = scfg.version
     this._clientVersionString = 'web-' + this._serverVersion.replace(/\.w$/, '')
 
@@ -65,6 +67,9 @@ class Client {
 
       const login = {
         client_version_string: this._clientVersionString,
+        client_version: {
+          resource: this._serverVersion,
+        },
         ...config.login
       }
       const res = await this._mjsoul.sendAsync('oauth2Login', login)
