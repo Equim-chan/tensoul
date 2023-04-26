@@ -30,6 +30,8 @@ const config = {
     reconnect: false,
   },
 
+  forceReLoginIntervalMs: 0,
+
   // optional
   // apiAuth: {
   //   name: 'equim',

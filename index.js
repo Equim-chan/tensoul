@@ -56,6 +56,33 @@ class Client {
 
     this._mjsoul.on('NotifyAccountLogout', () => this.login())
     this._mjsoul.open(() => this.login())
+
+    if (config.forceReLoginIntervalMs > 0) {
+      process.nextTick(async () => {
+        while (true) {
+          await new Promise(resolve => setTimeout(resolve, config.forceReLoginIntervalMs))
+          this._is_logged_in = false
+          this._mjsoul.close()
+
+          this._mjsoul = new MJSoul({
+            url: gateway,
+            timeout: config.mjsoul.timeout,
+            root,
+            wrapper,
+            wsOption: {
+              agent: new ProxyAgent(process.env.https_proxy),
+              origin: config.mjsoul.base,
+              headers: {
+                'User-Agent': config.userAgent,
+              }
+            },
+          })
+
+          this._mjsoul.on('NotifyAccountLogout', () => this.login())
+          this._mjsoul.open(() => this.login())
+        }
+      })
+    }
   }
 
   async login() {
