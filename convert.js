@@ -106,14 +106,14 @@ function tlround(x)
 }
 
 //parse mjs hule into tenhou agari list
-function parsehule(h, kyoku)
+function parsehule(h, kyoku, isHeadBump)
 {   //tenhou log viewer requires 点, 飜) or 役満) to end strings, rest of scoring string is entirely optional
     //who won, points from (self if tsumo), who won or if pao: who's responsible
     let res    = [h.seat, h.zimo ? h.seat : kyoku.ldseat, h.seat];
     let delta  = []; //we need to compute the delta ourselves to handle double/triple ron
     let points = 0;
-    let rp     = (-1 != kyoku.nriichi) ? 1000 * (kyoku.nriichi + kyoku.round[2]) : 0; //riichi stick points, -1 means already taken
-    let hb     = 100 * kyoku.round[1]; //base honba payment
+    let rp     = isHeadBump ? 1000 * (kyoku.nriichi + kyoku.round[2]) : 0; //riichi stick points
+    let hb     = isHeadBump ? 100 * kyoku.round[1] : 0; //base honba payment
 
     //sekinin barai logic
     let pao         = false;
@@ -161,7 +161,6 @@ function parsehule(h, kyoku)
         delta[h.seat]       = rp + (kyoku.nplayers - 1) * hb + h.point_rong;
         delta[kyoku.ldseat] = -(kyoku.nplayers - 1) * hb - h.point_rong;
         points = h.point_rong;
-        kyoku.nriichi = -1; //mark the sticks as taken, in case of double ron
     }
 
     //sekinin barai payments
@@ -554,11 +553,13 @@ function generatelog(mjslog)
             {   //agari
                 let agari = [];
                 let ura = [];
+                let isHeadBump = true;
                 e.hules.forEach( f =>
                 {
                     if (ura.length < (f.li_doras ? f.li_doras.length : 0)) //take the longest ura list - double ron with riichi + dama
                         ura = f.li_doras.map(g => tm2t(g));
-                    agari.push(parsehule(f, kyoku));
+                    agari.push(parsehule(f, kyoku, isHeadBump));
+                    isHeadBump = false;
                 });
                 let entry = kyoku.dump(ura);
 
