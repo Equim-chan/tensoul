@@ -90,8 +90,6 @@ class Client {
       this._is_logged_in = false
       console.error('login triggered')
 
-      await this._mjsoul.sendAsync('heatbeat')
-
       const login = {
         client_version_string: this._clientVersionString,
         client_version: {
