@@ -5,6 +5,7 @@ const Router = require('@koa/router')
 const auth = require('koa-basic-auth')
 const config = require('./config.js')
 const process = require('process')
+const Client = require('./client.js');
 
 
 (async () => {
