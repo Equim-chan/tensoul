@@ -649,7 +649,7 @@ function parse(record)
     );
     // level score, no real analog to rate
     res["rate"] = new Array(4).fill(0);
-    record.head.accounts.forEach(e => res["rate"][e.seat] = e.level.score); //level score, closest thing to rate
+    record.head.accounts.forEach(e => res["rate"][e.seat] = e.level.score || 0); //level score, closest thing to rate
     // sex
     res["sx"]  = new Array(4).fill('C')
     // >names
