@@ -4,7 +4,7 @@ const pb = require("protobufjs");
 const MJSoul = require("mjsoul");
 const superagent = require("superagent");
 require("superagent-proxy")(superagent);
-const ProxyAgent = require("proxy-agent");
+const { HttpsProxyAgent } = require("https-proxy-agent");
 
 const { toTenhou } = require("./convert.js");
 const deobfuse = require("./deobfuse.js");
@@ -15,15 +15,13 @@ const process = require("process");
 const EventEmitter = require("events");
 
 class Client {
-  constructor() {}
-
   async init() {
     this._condvar = new EventEmitter();
     this._is_logged_in = false;
 
     const scfg = await serverConfig.getServerConfig(
       config.mjsoul.base,
-      config.mjsoul.timeout,
+      config.mjsoul.timeout
     );
     console.error(scfg);
 
@@ -37,7 +35,7 @@ class Client {
     let gateway = config.mjsoul.gateway;
     if (gateway == null) {
       const endpoint = await serverConfig.chooseFastestServer(
-        scfg.serviceDiscoveryServers,
+        scfg.serviceDiscoveryServers
       );
       gateway = (await serverConfig.getCtlEndpoints(endpoint)).shift();
     }
@@ -50,7 +48,8 @@ class Client {
       // wrapper,
       wsOption: {
         agent:
-          new ProxyAgent(process.env.https_proxy),
+          process.env.https_proxy &&
+          new HttpsProxyAgent(process.env.https_proxy),
         // origin: config.mjsoul.base,
         headers: {
           "User-Agent": config.userAgent,
@@ -65,7 +64,7 @@ class Client {
       process.nextTick(async () => {
         while (true) {
           await new Promise((resolve) =>
-            setTimeout(resolve, config.forceReLoginIntervalMs),
+            setTimeout(resolve, config.forceReLoginIntervalMs)
           );
           this._is_logged_in = false;
           this._mjsoul.close();
@@ -77,7 +76,8 @@ class Client {
             wrapper,
             wsOption: {
               agent:
-                new ProxyAgent(process.env.https_proxy),
+                process.env.https_proxy &&
+                new HttpsProxyAgent(process.env.https_proxy),
               origin: config.mjsoul.base,
               headers: {
                 "User-Agent": config.userAgent,
