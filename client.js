@@ -8,7 +8,7 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 
 const { toTenhou } = require("./convert.js");
 const deobfuse = require("./deobfuse.js");
-const serverConfig = require("./server_config.js");
+const ServerConfig = require("./server_config.js");
 
 const process = require("process");
 const EventEmitter = require("events");
@@ -16,13 +16,14 @@ const EventEmitter = require("events");
 class Client {
   constructor(config) {
     this._config = config;
+    this._serverConfig = new ServerConfig(config);
   }
 
   async init() {
     this._condvar = new EventEmitter();
     this._is_logged_in = false;
 
-    const scfg = await serverConfig.getServerConfig(
+    const scfg = await this._serverConfig.getServerConfig(
       this._config.mjsoul.base,
       this._config.mjsoul.timeout,
     );
@@ -37,10 +38,10 @@ class Client {
 
     let gateway = this._config.mjsoul.gateway;
     if (gateway == null) {
-      const endpoint = await serverConfig.chooseFastestServer(
+      const endpoint = await this._serverConfig.chooseFastestServer(
         scfg.serviceDiscoveryServers,
       );
-      gateway = (await serverConfig.getCtlEndpoints(endpoint)).shift();
+      gateway = (await this._serverConfig.getCtlEndpoints(endpoint)).shift();
     }
     console.error(`using ${gateway}`);
 
