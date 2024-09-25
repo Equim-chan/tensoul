@@ -9,7 +9,7 @@ const Client = require('./client.js');
 
 
 (async () => {
-  const client = new Client()
+  const client = new Client(config)
   await client.init()
 
   if (process.argv.length > 2) {

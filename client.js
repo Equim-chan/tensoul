@@ -8,20 +8,24 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 
 const { toTenhou } = require("./convert.js");
 const deobfuse = require("./deobfuse.js");
-const serverConfig = require("./server_config.js");
-const config = require("./config.js");
+const ServerConfig = require("./server_config.js");
 
 const process = require("process");
 const EventEmitter = require("events");
 
 class Client {
+  constructor(config) {
+    this._config = config;
+    this._serverConfig = new ServerConfig(config);
+  }
+
   async init() {
     this._condvar = new EventEmitter();
     this._is_logged_in = false;
 
-    const scfg = await serverConfig.getServerConfig(
-      config.mjsoul.base,
-      config.mjsoul.timeout
+    const scfg = await this._serverConfig.getServerConfig(
+      this._config.mjsoul.base,
+      this._config.mjsoul.timeout,
     );
     console.error(scfg);
 
@@ -32,27 +36,27 @@ class Client {
     const root = pb.Root.fromJSON(scfg.liqi);
     const wrapper = root.lookupType("Wrapper");
 
-    let gateway = config.mjsoul.gateway;
+    let gateway = this._config.mjsoul.gateway;
     if (gateway == null) {
-      const endpoint = await serverConfig.chooseFastestServer(
-        scfg.serviceDiscoveryServers
+      const endpoint = await this._serverConfig.chooseFastestServer(
+        scfg.serviceDiscoveryServers,
       );
-      gateway = (await serverConfig.getCtlEndpoints(endpoint)).shift();
+      gateway = (await this._serverConfig.getCtlEndpoints(endpoint)).shift();
     }
     console.error(`using ${gateway}`);
 
     this._mjsoul = new MJSoul({
       url: gateway,
-      timeout: config.mjsoul.timeout,
-      // root,
-      // wrapper,
+      timeout: this._config.mjsoul.timeout,
+      root,
+      wrapper,
       wsOption: {
         agent:
           process.env.https_proxy &&
           new HttpsProxyAgent(process.env.https_proxy),
-        // origin: config.mjsoul.base,
+        origin: this._config.mjsoul.base,
         headers: {
-          "User-Agent": config.userAgent,
+          "User-Agent": this._config.userAgent,
         },
       },
     });
@@ -60,27 +64,27 @@ class Client {
     this._mjsoul.on("NotifyAccountLogout", () => this.login());
     this._mjsoul.open(() => this.login());
 
-    if (config.forceReLoginIntervalMs > 0) {
+    if (this._config.forceReLoginIntervalMs > 0) {
       process.nextTick(async () => {
         while (true) {
           await new Promise((resolve) =>
-            setTimeout(resolve, config.forceReLoginIntervalMs)
+            setTimeout(resolve, this._config.forceReLoginIntervalMs),
           );
           this._is_logged_in = false;
           this._mjsoul.close();
 
           this._mjsoul = new MJSoul({
             url: gateway,
-            timeout: config.mjsoul.timeout,
+            timeout: this._config.mjsoul.timeout,
             root,
             wrapper,
             wsOption: {
               agent:
                 process.env.https_proxy &&
                 new HttpsProxyAgent(process.env.https_proxy),
-              origin: config.mjsoul.base,
+              origin: this._config.mjsoul.base,
               headers: {
-                "User-Agent": config.userAgent,
+                "User-Agent": this._config.userAgent,
               },
             },
           });
@@ -102,7 +106,7 @@ class Client {
         client_version: {
           resource: this._serverVersion,
         },
-        ...config.login,
+        ...this._config.login,
       };
       const res = await this._mjsoul.sendAsync("oauth2Login", login);
       console.error("login done");
