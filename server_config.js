@@ -70,7 +70,7 @@ class Server {
       .set("User-Agent", this._userAgent);
     // .proxy(process.env.https_proxy)
 
-    return getCtlEndpoints.body.servers.map((p) => "wss://" + p);
+    return getCtlEndpoints.body.servers.map((p) => "wss://" + p + "/gateway");
   }
 }
 
