@@ -499,6 +499,7 @@ function generatelog(mjslog)
                 //    kyoku.discards[e.seat].push("f" + TSUMOGIRI);
                 //else
                 kyoku.discards[e.seat].push("f44");
+                kyoku.ldseat = e.seat; // for nukidora ron
 
                 return;
             }
