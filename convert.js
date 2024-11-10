@@ -618,11 +618,11 @@ function parse(record)
         nakas    = record.head.config.mode.detail_rule.dora_count;
         TSUMOLOSSOFF = (3 == nplayers) ? ! record.head.config.mode.detail_rule.have_zimosun : false;
     }
-    if (1 == record.head.config.mode.mode)
+    if (1 == record.head.config.mode.mode || 11 == record.head.config.mode.mode)
     {
         ruledisp += RUNES.tonpuu[NAMEPREF]; //" East";
     }
-    else if (2 == record.head.config.mode.mode)
+    else if (2 == record.head.config.mode.mode || 12 == record.head.config.mode.mode)
     {
         ruledisp += RUNES.hanchan[NAMEPREF]; //" South";
     }
